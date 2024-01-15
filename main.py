@@ -28,7 +28,7 @@ def percorso_breve(pista1, pista2):
         print("per raggiungere la tua destinazione nel minor tempo possibile, ti suggeriamo di seguire questo percorso:")
         for node in nodes:
             if node == nodes[-1]:
-                print(f"infie  {node['name']} ({node['diff']})")
+                print(f"infine  {node['name']} ({node['diff']})")
             elif node == nodes[0]:
                 print(f"per cominciare {node['name']} ({node['diff']})")
             else:
