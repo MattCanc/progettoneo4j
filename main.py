@@ -11,10 +11,18 @@ def piste_aperte():
 
 def percorso_breve(pista1, pista2):
     result = session.run("MATCH (p1:pista), (p2:pista) WHERE p1.name = $p1 AND p2.name = $p2 "
-                         "CALL apoc.shortestPath(p1, p2, {relationship: 'CONDUCE_A'}) "
-                         "YIELD path, weight RETURN length(path) as length, weight")
-    for r in result:
-        return r["length"], r["weight"]
+                         "CALL apoc.algo.dijkstra(p1, p2, 'CONDUCE_A', {relationshipFilter: 'r.stato = 1', weightProperty: 'durata_minuti'}) "
+                         "YIELD path, weight RETURN nodes(path) as nodes, relationships(path) as rels, weight "
+                         "ORDER BY REDUCE(s = 0, rel in rels | s + rel.durata_minuti) ASC, "
+                         "TOINTEGER(CASE LAST(nodes(path)).diff WHEN 'blu' THEN 1 WHEN 'rossa' THEN 2 WHEN 'nera' THEN 3 ELSE 4 END)", p1=pista1, p2=pista2)
+    
+    shortest_path = result.single()
+    
+    if shortest_path:
+        return len(shortest_path["rels"]), shortest_path["weight"]
+    else:
+        return None
+
 
 
 if __name__ == '__main__':
@@ -45,8 +53,8 @@ if __name__ == '__main__':
                 else:
                     print(f'la pista {elem} è aperta')
         elif scelta == 3:
-            pista1 = input("Inserisci il nome della prima pista: ")
-            pista2 = input("Inserisci il nome della seconda pista: ")
+            pista1 = input("Inserisci il nome del punto di partenza: ")
+            pista2 = input("Inserisci il nome del punto di arrivo: ")
             print(percorso_breve(pista1, pista2))
         elif scelta == 4:
             print('grazie per scelto il nostro servizio, alla prossima...')
