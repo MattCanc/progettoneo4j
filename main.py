@@ -5,11 +5,9 @@ def difficolta_piste():
     result = session.run("MATCH (p:pista) RETURN p.name, p.diff ORDER BY CASE p.diff WHEN 'blu' THEN 1 WHEN 'rossa' THEN 2 WHEN 'nera' THEN 3 ELSE 4 END")
     return [(r["p.name"], r["p.diff"]) for r in result]
 
-
 def piste_aperte():
-    result = session.run("MATCH (p:pista) WHERE p.stato = 1 RETURN p.name, p.stato")
-    return [(r["p.name"], r["p.stato"]) for r in result]
-
+    result = session.run("MATCH (p:pista)-[r:CONDUCE_A]->() WHERE r.stato = 1 RETURN p.name")
+    return [r["p.name"] for r in result]
 
 def percorso_breve(pista1, pista2):
     result = session.run("MATCH (p1:pista), (p2:pista) WHERE p1.name = $p1 AND p2.name = $p2 "
@@ -40,7 +38,12 @@ if __name__ == '__main__':
             for elem in result:
                 print(f'la pista {elem[0]} ha difficoltà: {elem[1]}')
         elif scelta == 2:
-            print(piste_aperte())
+            for elem in piste_aperte():
+                if elem[-1] ==' ':
+                    elem = elem[:-1]
+                    print(f'la pista {elem} è aperta')
+                else:
+                    print(f'la pista {elem} è aperta')
         elif scelta == 3:
             pista1 = input("Inserisci il nome della prima pista: ")
             pista2 = input("Inserisci il nome della seconda pista: ")
