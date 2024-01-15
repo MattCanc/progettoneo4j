@@ -10,34 +10,20 @@ def piste_aperte():
     return [r["p.name"] for r in result]
 
 def percorso_breve(pista1, pista2):
-    result = session.run(
-        "MATCH path = (startNode:pista {name: $p1})-[:CONDUCE_A*]->(endNode:pista {name: $p2})\n"
-        "WITH path, REDUCE(totalDuration = 0, rel IN relationships(path) | totalDuration + rel.durata_minuti) AS totalDuration\n"
-        "ORDER BY totalDuration ASC\n"
-        "LIMIT 1\n"
-        "RETURN nodes(path) as nodes, relationships(path) as rels, totalDuration;", p1=pista1, p2=pista2
-    )
+    result = session.run("MATCH (p1:pista), (p2:pista) WHERE p1.name = $p1 AND p2.name = $p2 "
+                         "CALL apoc.algo.dijkstra(p1, p2, 'CONDUCE_A', {relationshipFilter: 'r.stato = 1', weightProperty: 'durata_minuti'}) "
+                         "YIELD path, weight RETURN nodes(path) as nodes, relationships(path) as rels, weight "
+                         "ORDER BY REDUCE(s = 0, rel in rels | s + rel.durata_minuti) ASC, "
+                         "TOINTEGER(CASE LAST(nodes(path)).diff WHEN 'blu' THEN 1 WHEN 'rossa' THEN 2 WHEN 'nera' THEN 3 ELSE 4 END)", p1=pista1, p2=pista2)
     
-    record = result.single()
+    shortest_path = result.single()
     
-    if record:
-        nodes = record["nodes"]
-        rels = record["rels"]
-        total_duration = record["totalDuration"]
-        print('--------------------------------------------------------------------------------------------------------------------------\n')
-        print("per raggiungere la tua destinazione nel minor tempo possibile, ti suggeriamo di seguire questo percorso:")
-        for node in nodes:
-            if node == nodes[-1]:
-                print(f"infie  {node['name']} ({node['diff']})")
-            elif node == nodes[0]:
-                print(f"per cominciare {node['name']} ({node['diff']})")
-            else:
-                print(f"successivamente  {node['name']} ({node['diff']})")
-        print(f'il tempo totale di percorrenza è di circa {total_duration} minuti')
-
-        return None
+    if shortest_path:
+        return len(shortest_path["rels"]), shortest_path["weight"]
     else:
         return None
+
+
 
 if __name__ == '__main__':
     try:
@@ -69,7 +55,7 @@ if __name__ == '__main__':
         elif scelta == 3:
             pista1 = input("Inserisci il nome del punto di partenza: ")
             pista2 = input("Inserisci il nome del punto di arrivo: ")
-            percorso_breve(pista1, pista2)
+            print(percorso_breve(pista1, pista2))
         elif scelta == 4:
             print('grazie per scelto il nostro servizio, alla prossima...')
             break
