@@ -2,7 +2,7 @@ from neo4j import GraphDatabase
 
 
 def difficolta_piste():
-    result = session.run("MATCH (p:pista) RETURN p.name, p.diff")
+    result = session.run("MATCH (p:pista) RETURN p.name, p.diff ORDER BY CASE p.diff WHEN 'blu' THEN 1 WHEN 'rossa' THEN 2 WHEN 'nera' THEN 3 ELSE 4 END")
     return [(r["p.name"], r["p.diff"]) for r in result]
 
 
@@ -36,7 +36,9 @@ if __name__ == '__main__':
                             '\n3 per visualizzare il percorso più breve tra due piste'
                             '\n4 per uscire\n')))
         if scelta == 1:
-            print(difficolta_piste())
+            result = difficolta_piste()
+            for elem in result:
+                print(f'la pista {elem[0]} ha difficoltà: {elem[1]}')
         elif scelta == 2:
             print(piste_aperte())
         elif scelta == 3:
@@ -44,6 +46,7 @@ if __name__ == '__main__':
             pista2 = input("Inserisci il nome della seconda pista: ")
             print(percorso_breve(pista1, pista2))
         elif scelta == 4:
+            print('grazie per scelto il nostro servizio, alla prossima...')
             break
         else:
             print('Scelta non valida')
